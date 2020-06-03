@@ -1,6 +1,15 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
+
+    <button @click="$store.commit('add')">
+      同步 {{ $store.state.counter }}
+    </button>
+
+    <button @click="$store.dispatch('add')">
+      异步 {{ $store.state.counter }}
+    </button>
+    <p>getters -- {{ $store }}</p>
   </div>
 </template>
 
@@ -8,8 +17,11 @@
 export default {
   name: "HelloWorld",
   props: {
-    msg: String
-  }
+    msg: String,
+  },
+  mounted(options) {
+    console.log(options, "options--stroe", this.$store);
+  },
 };
 </script>
 
