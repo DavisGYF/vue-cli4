@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">
+      <p @click="add">{{counter}}</p>
+      <p id="ktext" k-text="counter"></p>
+      <p k-html="desc"></p>
+      <p>
+        <input type="text" k-model="desc" />
+      </p>
+
+      <button @click="add">click 增加</button>
+    </div>
+
+    <script src="kvue.js"></script>
+
+    <script>
+      console.log("000", document.getElementById("ktext"));
+      // document.getElementsByTagName("button")[0].addEventListener("click", function() {
+      //     document.getElementById("ktext").innerHTML = "Hello World";
+      //   });
+      const app = new KVue({
+        el: "#app",
+        data: {
+          counter: 1,
+          desc: '<span style="color:red">kvue可还行？</span>',
+        },
+        methods: {
+          add() {
+            this.counter++;
+          },
+        },
+      });
+      // setInterval(() => {
+      //   app.counter++;
+      // }, 1000);
+    </script>
+  </body>
+</html>
