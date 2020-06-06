@@ -155,7 +155,8 @@ class Compiler {
         // document.getElementsByTagName("button")[0].addEventListener("click", function() {
         //     document.getElementById("ktext").innerHTML = "Hello World";
         //   });
-        node.addEventListener(dirEvent, method[exp]);
+        const fn = method && method;
+        node.addEventListener(dirEvent, method[exp].bind(this.$vm));
         console.log("method-------121", method[exp]);
       }
     });
@@ -171,6 +172,17 @@ class Compiler {
   html(node, exp) {
     // node.innerHTML = this.$vm[exp]
     this.update(node, exp, "html");
+  }
+
+  // k-model
+  model(node, exp) {
+    // node.innerHTML = this.$vm[exp]
+    this.update(node, exp, "model");
+
+    node.addEventListener("input", (e) => {
+      console.log(this.$vm, "e", e);
+      this.$vm[exp] = e.target.value;
+    });
   }
 
   // dir:要做的指令名称
@@ -198,6 +210,11 @@ class Compiler {
   // 文本节点且形如{{xx}}
   isInter(node) {
     return node.nodeType === 3 && /\{\{(.*)\}\}/.test(node.textContent);
+  }
+
+  modelUpdater(node, value, dir) {
+    node.value = value;
+    // @input = onInput
   }
 }
 
