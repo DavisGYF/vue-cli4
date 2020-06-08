@@ -880,8 +880,12 @@
       var args = [], len = arguments.length;
       while ( len-- ) args[ len ] = arguments[ len ];
 
+      // 数组方法的默认行为
       var result = original.apply(this, args);
+
+      // 变更通知：获取小管家
       var ob = this.__ob__;
+      // 插入操作：会导致新元素进入，他们需要社会主义教育
       var inserted;
       switch (method) {
         case 'push':
@@ -894,6 +898,7 @@
       }
       if (inserted) { ob.observeArray(inserted); }
       // notify change
+      // 小管家通知更新
       ob.dep.notify();
       return result
     });
@@ -921,10 +926,15 @@
    */
   var Observer = function Observer (value) {
     this.value = value;
+    // 小管家
     this.dep = new Dep();
     this.vmCount = 0;
     def(value, '__ob__', this);
+
+
+    // 判断传入value类型，做相应处理
     if (Array.isArray(value)) {
+      // 覆盖数组实例的原型
       if (hasProto) {
         protoAugment(value, arrayMethods);
       } else {
@@ -932,6 +942,7 @@
       }
       this.observeArray(value);
     } else {
+      // 对象处理
       this.walk(value);
     }
   };
@@ -990,7 +1001,9 @@
     if (!isObject(value) || value instanceof VNode) {
       return
     }
+    // 返回一个Observer实例
     var ob;
+    // 如果做过响应式，那么__ob__存在的，直接返回
     if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
       ob = value.__ob__;
     } else if (
@@ -1000,6 +1013,7 @@
       Object.isExtensible(value) &&
       !value._isVue
     ) {
+      // 如果为处理，创建一个新实例
       ob = new Observer(value);
     }
     if (asRootData && ob) {
@@ -1018,6 +1032,7 @@
     customSetter,
     shallow
   ) {
+    // 大管家，和key 1：1
     var dep = new Dep();
 
     var property = Object.getOwnPropertyDescriptor(obj, key);
@@ -1032,15 +1047,24 @@
       val = obj[key];
     }
 
+    // 递归，如果val是对象，则获得一个子Observer实例
     var childOb = !shallow && observe(val);
     Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: true,
       get: function reactiveGetter () {
+        // 依赖收集
         var value = getter ? getter.call(obj) : val;
+        // Dep.target就是Watcher实例
         if (Dep.target) {
+          // dep和watcher之间是n:n
+          // computed,watch
+          // 双向添加两者关系
           dep.depend();
+          // 若存在子Ob
           if (childOb) {
+            // 把当前watcher和子ob中的dep建立关系
+            // 对象属性变化或者数组元素变化需要小管家通知更新
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray(value);
@@ -3758,6 +3782,7 @@
     vm._events = Object.create(null);
     vm._hasHookEvent = false;
     // init parent attached events
+    // 事件处理谁派发谁监听
     var listeners = vm.$options._parentListeners;
     if (listeners) {
       updateComponentListeners(vm, listeners);
@@ -4495,9 +4520,11 @@
   Watcher.prototype.addDep = function addDep (dep) {
     var id = dep.id;
     if (!this.newDepIds.has(id)) {
+      // 创建watcher和dep关系
       this.newDepIds.add(id);
       this.newDeps.push(dep);
       if (!this.depIds.has(id)) {
+        // 创建dep和watcher
         dep.addSub(this);
       }
     }
@@ -4692,6 +4719,7 @@
   }
 
   function initData (vm) {
+    // 获取data对象
     var data = vm.$options.data;
     data = vm._data = typeof data === 'function'
       ? getData(data, vm)
@@ -4705,6 +4733,7 @@
       );
     }
     // proxy data on instance
+    // 代理、重复判断
     var keys = Object.keys(data);
     var props = vm.$options.props;
     var methods = vm.$options.methods;
@@ -4730,6 +4759,7 @@
       }
     }
     // observe data
+    // 对data做响应化处理
     observe(data, true /* asRootData */);
   }
 
@@ -4970,6 +5000,7 @@
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
+      // 合并选项
       if (options && options._isComponent) {
         // optimize internal component instantiation
         // since dynamic options merging is pretty slow, and none of the
@@ -4987,13 +5018,14 @@
         initProxy(vm);
       }
       // expose real self
+      // 初始化核心
       vm._self = vm;
-      initLifecycle(vm);
-      initEvents(vm);
-      initRender(vm);
+      initLifecycle(vm); // $parent $root $children
+      initEvents(vm); // 事件监听
+      initRender(vm); // $slots/$createElement
       callHook(vm, 'beforeCreate');
       initInjections(vm); // resolve injections before data/props
-      initState(vm);
+      initState(vm); // 核心：数据初始化
       initProvide(vm); // resolve provide after data/props
       callHook(vm, 'created');
 
@@ -5066,24 +5098,29 @@
     return modified
   }
 
+  // Vue构造函数
   function Vue (options) {
     if (
       !(this instanceof Vue)
     ) {
       warn('Vue is a constructor and should be called with the `new` keyword');
     }
+    // 初始化方法
     this._init(options);
   }
 
-  initMixin(Vue);
-  stateMixin(Vue);
-  eventsMixin(Vue);
-  lifecycleMixin(Vue);
-  renderMixin(Vue);
+  // 实现实例方法和属性
+  initMixin(Vue); // _init()
+  stateMixin(Vue); // $set/$delete/$watch
+  eventsMixin(Vue); // $on/$off/$once/$emit
+  lifecycleMixin(Vue); // $forceUpdate/_update()
+  renderMixin(Vue); // $nextTick _render
 
   /*  */
 
   function initUse (Vue) {
+
+    // Vue.use()
     Vue.use = function (plugin) {
       var installedPlugins = (this._installedPlugins || (this._installedPlugins = []));
       if (installedPlugins.indexOf(plugin) > -1) {
@@ -5422,6 +5459,7 @@
     initAssetRegisters(Vue);
   }
 
+  // 初始化全局api  
   initGlobalAPI(Vue);
 
   Object.defineProperty(Vue.prototype, '$isServer', {
@@ -9034,14 +9072,17 @@
   extend(Vue.options.components, platformComponents);
 
   // install platform patch function
+  // 安装平台patch函数，主要用于初始化和更新
   Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
   // public mount method
+  // 实现$mount: 
   Vue.prototype.$mount = function (
     el,
     hydrating
   ) {
     el = el && inBrowser ? query(el) : undefined;
+    // 组件挂载 vnode =》 node
     return mountComponent(this, el, hydrating)
   };
 
@@ -11881,11 +11922,13 @@
     return el && el.innerHTML
   });
 
+  // 扩展$mount：判断是否需要编译出渲染函数
   var mount = Vue.prototype.$mount;
   Vue.prototype.$mount = function (
     el,
     hydrating
   ) {
+    // 宿主元素
     el = el && query(el);
 
     /* istanbul ignore if */
@@ -11896,8 +11939,11 @@
       return this
     }
 
+    // 处理选项：render/template/el
     var options = this.$options;
     // resolve template/el and convert to render function
+    // render不存在才判断template
+    // render > template > el
     if (!options.render) {
       var template = options.template;
       if (template) {
@@ -11929,6 +11975,7 @@
           mark('compile');
         }
 
+        // 运行时编译：将模板编译为render函数
         var ref = compileToFunctions(template, {
           outputSourceRange: "development" !== 'production',
           shouldDecodeNewlines: shouldDecodeNewlines,
